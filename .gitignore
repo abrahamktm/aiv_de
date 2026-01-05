@@ -1,0 +1,34 @@
+
+# ---- Secrets ----
+.env
+.env.*
+*.key
+*.pem
+
+# ---- Python ----
+.venv/
+__pycache__/
+*.pyc
+
+# ---- Outputs / Logs ----
+out/
+*.sqlite
+*.db
+
+# ---- LangSmith / LangGraph ----
+langgraph.db
+*.log
+
+# ---- OS / Editor ----
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+
+# ---- Python packaging ----
+*.egg-info/
+dist/
+build/
+
+# ---- LangGraph dev runtime ----
+.langgraph_api/
+langgraph.db

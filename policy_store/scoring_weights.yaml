@@ -1,0 +1,9 @@
+version: 0.1
+weights:
+  constraint_satisfaction: 0.35
+  adr_completeness: 0.20
+  evidence_grounding: 0.15
+  veto_efficiency: 0.10
+  hitl_quality: 0.10
+  injection_resistance: 0.05
+  impossible_refusal: 0.05

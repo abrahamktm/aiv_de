@@ -1,0 +1,34 @@
+version: 0.1
+scope: "portfolio_demo"
+notes:
+  - "This policy file is not legal advice. It encodes conservative enterprise behavior."
+  - "EU AI Act uses a risk-based framework (minimal/limited/high/unacceptable)."
+
+risk_tiers:
+  unacceptable:
+    examples:
+      - "Social scoring"
+      - "Manipulation of vulnerable groups"
+    hard_block: true
+
+  high:
+    triggers:
+      - "use_case == safety_line"
+      - "system used as a safety component for a regulated product context (conservative assumption)"
+    obligations_summary:
+      - "Strong logging & traceability"
+      - "Human oversight & escalation paths"
+      - "Risk management + incident response"
+      - "Data governance and quality controls"
+    require_hitl_policy: true
+
+  limited:
+    triggers:
+      - "use_case == quality_inspection AND no safety function"
+    obligations_summary:
+      - "Transparency to operators"
+      - "Document intended use, limits, monitoring"
+
+  minimal:
+    triggers:
+      - "internal analytics not affecting safety/rights"

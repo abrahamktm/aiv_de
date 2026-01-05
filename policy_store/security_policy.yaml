@@ -1,0 +1,18 @@
+version: 0.1
+prompt_injection:
+  patterns:
+    - "IGNORE ALL PREVIOUS"
+    - "exfiltrate"
+    - "admin secrets"
+    - "send to cloud"
+  response:
+    on_detect:
+      - "strip_untrusted_text"
+      - "log_security_event"
+      - "force_validator_review"
+supply_chain:
+  require_sbom: true
+  require_model_provenance: true
+logging:
+  redact_secrets: true
+  store_tool_inputs_outputs: true

@@ -1,0 +1,15 @@
+{
+  "name": "aiv-de",
+  "python_version": "3.12",
+  "env": {
+    "PYTHONPATH": "src"
+  },
+  "dependencies": [
+    "langgraph",
+    "langchain",
+    "langchain-openai"
+  ],
+  "graphs": {
+    "aiv_de_main": "aiv_de.graph:compile_graph"
+  }
+}

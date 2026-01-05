@@ -1,0 +1,19 @@
+version: 0.1
+rules:
+  - id: "no_raw_to_cloud"
+    if:
+      data_residency_required: true
+    then:
+      allow_raw_image_upload: false
+      allow_cloud_inference: false
+      allow_cloud_storage: false
+      allowed_telemetry:
+        - "aggregated_metrics"
+        - "hashed_ids"
+        - "model_version"
+        - "drift_scores"
+      required_controls:
+        - "encryption_at_rest"
+        - "encryption_in_transit"
+        - "access_logging"
+        - "least_privilege"

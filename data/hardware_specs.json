@@ -1,0 +1,65 @@
+[
+  {
+    "hw_id": "EDGE_CPU_TINY_8W",
+    "class": "edge",
+    "accel": "cpu",
+    "memory_gb": 8,
+    "power_class_w": "5-10",
+    "cost_class": "low",
+    "notes": "Tiny fanless edge box. Suitable for lightweight pipelines and aggressive ROI/tiling."
+  },
+  {
+    "hw_id": "EDGE_CPU_25W",
+    "class": "edge",
+    "accel": "cpu",
+    "memory_gb": 16,
+    "power_class_w": "15-30",
+    "cost_class": "low",
+    "notes": "General-purpose industrial edge PC. Good for classical CV + small models."
+  },
+  {
+    "hw_id": "EDGE_GPU_25W_16GB",
+    "class": "edge",
+    "accel": "gpu",
+    "memory_gb": 16,
+    "power_class_w": "15-30",
+    "cost_class": "mid",
+    "notes": "Edge GPU module class device. Use for low-latency safety lines with local inference."
+  },
+  {
+    "hw_id": "EDGE_GPU_60W_32GB",
+    "class": "edge",
+    "accel": "gpu",
+    "memory_gb": 32,
+    "power_class_w": "45-75",
+    "cost_class": "mid",
+    "notes": "Bigger edge GPU box. Headroom for multi-camera batching and redundancy."
+  },
+  {
+    "hw_id": "ONPREM_CPU_1U",
+    "class": "onprem",
+    "accel": "cpu",
+    "memory_gb": 128,
+    "power_class_w": "200-400",
+    "cost_class": "mid",
+    "notes": "On-prem CPU server. Good for centralized orchestration and non-GPU workloads."
+  },
+  {
+    "hw_id": "ONPREM_GPU_1U_SINGLE",
+    "class": "onprem",
+    "accel": "gpu",
+    "memory_gb": 64,
+    "power_class_w": "400-800",
+    "cost_class": "high",
+    "notes": "On-prem GPU server. Use for site-local training-free calibration, heavy inference, fleet management."
+  },
+  {
+    "hw_id": "ONPREM_GPU_2U_REDUNDANT",
+    "class": "onprem",
+    "accel": "gpu",
+    "memory_gb": 128,
+    "power_class_w": "800-1600",
+    "cost_class": "high",
+    "notes": "Redundant on-prem stack for high-availability factories. Overkill for low criticality."
+  }
+]

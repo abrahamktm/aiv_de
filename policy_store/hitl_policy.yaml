@@ -1,0 +1,21 @@
+version: 0.1
+hitl_triggers:
+  - id: "validator_exhausted"
+    condition: "retries >= max_retries"
+    action: "ESCALATE_TO_HUMAN"
+
+  - id: "constraint_impossible"
+    condition: "feasibility.is_possible == false"
+    action: "ESCALATE_TO_HUMAN"
+
+  - id: "safety_uncertainty"
+    condition: "use_case == safety_line AND feasibility.margin == 'low'"
+    action: "REQUIRE_HUMAN_APPROVAL"
+
+  - id: "drift_high"
+    condition: "distribution_shift_risk == 'high'"
+    action: "REQUIRE_HUMAN_APPROVAL"
+
+  - id: "policy_violation"
+    condition: "policy.passed == false"
+    action: "BLOCK_AND_ESCALATE"
