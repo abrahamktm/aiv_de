@@ -9,6 +9,16 @@ from aiv_de.config import SETTINGS
 from aiv_de.graph import compile_graph, load_policy_store
 
 
+def parse_args(argv: list[str]) -> tuple[str, bool]:
+    site_id = "DE-MUC-01"
+    stream = True
+    for arg in argv:
+        if arg == "--stream":
+            stream = True
+        else:
+            site_id = arg
+    return site_id, stream
+
 def main(site_id: str = "DE-MUC-01", stream: bool = False) -> None:
     run_id = uuid.uuid4().hex[:12]
     thread_id = str(uuid.uuid4())
@@ -75,12 +85,6 @@ def main(site_id: str = "DE-MUC-01", stream: bool = False) -> None:
 
 if __name__ == "__main__":
     # Usage: python -m aiv_de.run_one [SITE_ID] [--stream]
-    site_id = "DE-MUC-01"
-    stream = True
-    for arg in sys.argv[1:]:
-        if arg == "--stream":
-            stream = True
-        else:
-            site_id = arg
+    site_id, stream = parse_args(sys.argv[1:])
     main(site_id=site_id, stream=stream)
 
