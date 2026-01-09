@@ -43,13 +43,21 @@ def n_requirements(state: AIVDEState) -> Dict[str, Any]:
 
 def n_architect(state: AIVDEState) -> Dict[str, Any]:
     llm = ChatOpenAI(model=SETTINGS.model_name)
-    opts = propose_options(llm, state["site_profile"], state.get("requirements", {}), state.get("run_id", "no_run_id"))
+    opts = propose_options(
+        llm,
+        state["site_profile"],
+        state.get("requirements", {}),
+        state.get("hw_db", []),
+        state.get("vetoes", []),
+        state.get("run_id", "no_run_id"),
+    )
 
-    # Skeleton: until we parse JSON, just keep raw and let validator pick a placeholder.
     trace = state.get("trace", [])
-    trace.append({"node": "architect", "event": "proposed_raw"})
-    return {"options": [{"option_id": "RAW_OPTIONS", "summary": opts["raw"], "placement": {}, "pipeline": [], "hardware": [], "pros": [], "cons": [], "risks": [], "mitigations": []}],
-            "trace": trace}
+    if opts.get("error"):
+        trace.append({"node": "architect", "event": "validation_failed", "error": opts.get("error")})
+    else:
+        trace.append({"node": "architect", "event": "proposed_structured"})
+    return {"options": opts.get("options", []), "trace": trace}
 
 def n_select(state: AIVDEState) -> Dict[str, Any]:
     # For skeleton: pick first option or a minimal default if not present
@@ -65,6 +73,10 @@ def n_select(state: AIVDEState) -> Dict[str, Any]:
         "risks": ["Drift across sites"],
         "mitigations": ["Canary rollout + drift monitoring + HITL gates"]
     }
+    hw_db = state.get("hw_db", [])
+    if not selected.get("hardware") and hw_db:
+        selected = {**selected, "hardware": [hw_db[0].get("hw_id")]}
+
     trace = state.get("trace", [])
     trace.append({"node": "select", "event": "selected", "option_id": selected.get("option_id")})
     return {"selected_option": selected, "trace": trace}

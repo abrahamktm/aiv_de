@@ -5,7 +5,7 @@
     "use_case": "safety_line",
     "latency_budget_ms": 50,
     "availability_target": "99.9",
-    "power_budget_w": 25,
+    "power_budget_w": 30,
     "data_residency_required": true,
     "wan_connectivity": {
       "typical_uplink_mbps": 20,

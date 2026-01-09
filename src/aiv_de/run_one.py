@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 import uuid
 
 from aiv_de.config import SETTINGS
@@ -38,7 +39,10 @@ def main(site_id: str = "DE-MUC-01", stream: bool = False) -> None:
         final_state = None
         for event in app.stream(inputs, config=config):
             # event is typically a dict of updates; printing helps you see progress
-            print(event)
+            if isinstance(event, dict):
+                print(json.dumps(event, ensure_ascii=True))
+            else:
+                print(event)
             # Keep updating final_state; last one will be the most complete
             if isinstance(event, dict):
                 final_state = event
@@ -52,16 +56,31 @@ def main(site_id: str = "DE-MUC-01", stream: bool = False) -> None:
         out = app.invoke(inputs, config=config)
 
     # Write artifacts
+    adr_value = out.get("adr", "")
+    if isinstance(adr_value, dict):
+        adr_text = adr_value.get("adr", "")
+        trace_value = adr_value.get("trace", out.get("trace", []))
+    else:
+        adr_text = adr_value
+        trace_value = out.get("trace", [])
+
     os.makedirs("out", exist_ok=True)
     with open(f"out/{site_id}_ADR-001.md", "w", encoding="utf-8") as f:
-        f.write(out.get("adr", ""))
+        f.write(adr_text)
     with open(f"out/{site_id}_trace.json", "w", encoding="utf-8") as f:
-        json.dump(out.get("trace", []), f, indent=2)
+        json.dump(trace_value, f, indent=2)
 
     print(f"[run_id={run_id}] Wrote out/{site_id}_ADR-001.md and out/{site_id}_trace.json")
 
 
 if __name__ == "__main__":
-    #main()
-    main(stream=True)
+    # Usage: python -m aiv_de.run_one [SITE_ID] [--stream]
+    site_id = "DE-MUC-01"
+    stream = True
+    for arg in sys.argv[1:]:
+        if arg == "--stream":
+            stream = True
+        else:
+            site_id = arg
+    main(site_id=site_id, stream=stream)
 
