@@ -1,9 +1,7 @@
-from __future__ import annotations
-
 from aiv_de.agents.validator_governance import validate_and_veto
 
 
-def main() -> None:
+def test_power_budget_veto():
     site_profile = {
         "power_budget_w": 10,
         "use_case": "safety_line",
@@ -23,7 +21,3 @@ def main() -> None:
     veto_reasons = [v["reason"] for v in out["vetoes"]]
     assert "Feasibility failed" in veto_reasons
     assert "power_budget_exceeded_for_edge_hw" in out["feasibility"]["bottlenecks"]
-
-
-if __name__ == "__main__":
-    main()

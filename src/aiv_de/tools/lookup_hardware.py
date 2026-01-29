@@ -1,5 +1,5 @@
-from __future__ import annotations
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
+
 
 def lookup_hardware(hw_db: List[Dict[str, Any]], hw_ids: List[str]) -> List[Dict[str, Any]]:
     index = {h["hw_id"]: h for h in hw_db}

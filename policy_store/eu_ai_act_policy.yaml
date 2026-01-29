@@ -1,5 +1,5 @@
 version: 0.1
-scope: "portfolio_demo"
+scope: "industrial_vision"
 notes:
   - "This policy file is not legal advice. It encodes conservative enterprise behavior."
   - "EU AI Act uses a risk-based framework (minimal/limited/high/unacceptable)."

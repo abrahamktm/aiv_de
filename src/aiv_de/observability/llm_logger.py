@@ -1,6 +1,3 @@
-# src/aiv_de/observability/llm_logger.py
-from __future__ import annotations
-
 import hashlib
 import json
 import os
@@ -9,16 +6,13 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 
 REDACTION_PATTERNS = [
-    # API keys (very rough patterns)
     (re.compile(r"sk-[A-Za-z0-9]{20,}"), "[REDACTED_API_KEY]"),
     (re.compile(r"(?i)openai[_-]?api[_-]?key\s*[:=]\s*\S+"), "OPENAI_API_KEY=[REDACTED]"),
-    # Emails
     (re.compile(r"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"), "[REDACTED_EMAIL]"),
-    # Phone-ish
     (re.compile(r"\+?\d[\d\s().-]{8,}\d"), "[REDACTED_PHONE]"),
-    # Windows paths
     (re.compile(r"[A-Za-z]:\\(?:[^\\\r\n]+\\)*[^\\\r\n]*"), "[REDACTED_PATH]"),
 ]
+
 
 def _redact(text: str) -> str:
     out = text
@@ -26,21 +20,16 @@ def _redact(text: str) -> str:
         out = pat.sub(repl, out)
     return out
 
+
 def _sha256(text: str) -> str:
     return hashlib.sha256(text.encode("utf-8", errors="ignore")).hexdigest()
 
-class SafeLLMLogger:
-    """
-    Opt-in JSONL logger for LLM prompts/responses.
-    Stores redacted previews + hashes, not full secrets.
-    """
 
-    def __init__(
-        self,
-        base_dir: str,
-        enabled: bool = False,
-        max_chars: int = 2000,
-    ) -> None:
+class SafeLLMLogger:
+    """Opt-in JSONL logger for LLM prompts/responses.
+    Stores redacted previews + hashes, not full secrets."""
+
+    def __init__(self, base_dir: str, enabled: bool = False, max_chars: int = 2000) -> None:
         self.enabled = enabled
         self.base_dir = base_dir
         self.max_chars = max_chars

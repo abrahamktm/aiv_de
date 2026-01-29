@@ -1,32 +1,16 @@
-tools/ — deterministic, auditable, “no hallucination” layer
+# tools/ -- Deterministic validation layer
 
-These are the non-LLM parts that make decisions defensible.
+These are the non-LLM guardrails. "LLM proposes, tools dispose."
 
-lookup_hardware.py
+- **lookup_hardware.py** -- Resolves hardware IDs from architect proposals against the known hardware DB. Marks unknown IDs.
 
-Takes hardware IDs from the architecture proposal and resolves them into known hardware records.
+- **validate_feasibility.py** -- Engineering sanity checks:
+  - Power budget vs edge hardware class
+  - Safety-line latency vs cloud dependency
+  - Multi-cam / high-fps / high-res vs low power (infeasible)
+  - Returns: `is_possible`, `margin`, `bottlenecks`, `suggested_pipeline`
 
-validate_feasibility.py
-
-Quick “engineering sanity check”:
-
-power budget vs edge box class
-
-safety latency vs cloud dependency
-
-multi-cam/high-fps/high-res vs low power → likely impossible
-
-Outputs: is_possible + margin + bottlenecks + suggested_pipeline
-
-policy_check.py
-
-Enforces policy store:
-
-data residency rules
-
-prompt injection detection (POISON site)
-
-Outputs: passed/failed + violated rules + required controls + HITL action
-
-Key idea: LLM proposes, tools dispose.
-The LLM is not allowed to be “the final authority.”
+- **policy_check.py** -- Governance enforcement:
+  - Data residency: blocks cloud placement if residency is required
+  - Prompt injection: regex detection against security policy patterns
+  - Returns: `passed`, `violated_rules`, `required_controls`, `hitl_action`

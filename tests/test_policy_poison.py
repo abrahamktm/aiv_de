@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 from pathlib import Path
 
@@ -8,7 +6,7 @@ from aiv_de.tools.policy_check import policy_check
 from aiv_de.config import SETTINGS
 
 
-def main() -> None:
+def test_poison_site_detected():
     sites_path = Path(SETTINGS.data_dir) / "sites.json"
     sites = json.load(open(sites_path, "r", encoding="utf-8"))
     site = next(s for s in sites if s["site_id"] == "POISON-12")
@@ -17,7 +15,3 @@ def main() -> None:
     out = policy_check(site, {"placement": {}}, policies)
     assert out["passed"] is False
     assert "prompt_injection_detected" in out["violated_rules"]
-
-
-if __name__ == "__main__":
-    main()

@@ -1,12 +1,11 @@
-from __future__ import annotations
-
+import pytest
 from pydantic import ValidationError
 
 from aiv_de.agents.architect import ArchitectureOptionsResponse
 
 
-def main() -> None:
-    ok_payload = {
+def test_valid_payload_parses():
+    payload = {
         "options": [
             {
                 "option_id": "OPT-1",
@@ -21,9 +20,11 @@ def main() -> None:
             }
         ]
     }
-    parsed = ArchitectureOptionsResponse.model_validate(ok_payload)
+    parsed = ArchitectureOptionsResponse.model_validate(payload)
     assert parsed.options[0].placement["inference"] == "edge"
 
+
+def test_bad_placement_type_raises():
     bad_payload = {
         "options": [
             {
@@ -39,12 +40,5 @@ def main() -> None:
             }
         ]
     }
-    try:
+    with pytest.raises(ValidationError):
         ArchitectureOptionsResponse.model_validate(bad_payload)
-    except ValidationError:
-        return
-    raise AssertionError("expected ValidationError for invalid placement type")
-
-
-if __name__ == "__main__":
-    main()

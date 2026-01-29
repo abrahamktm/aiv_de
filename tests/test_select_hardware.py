@@ -1,9 +1,7 @@
-from __future__ import annotations
-
 from aiv_de.graph import n_select
 
 
-def main() -> None:
+def test_hardware_fallback_when_empty():
     state = {
         "options": [
             {
@@ -24,7 +22,3 @@ def main() -> None:
     out = n_select(state)
     selected = out.get("selected_option", {})
     assert selected.get("hardware"), "expected hardware to be set for selected option"
-
-
-if __name__ == "__main__":
-    main()

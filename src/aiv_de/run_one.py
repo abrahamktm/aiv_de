@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import json
 import os
 import sys
@@ -19,6 +17,7 @@ def parse_args(argv: list[str]) -> tuple[str, bool]:
             site_id = arg
     return site_id, stream
 
+
 def main(site_id: str = "DE-MUC-01", stream: bool = False) -> None:
     run_id = uuid.uuid4().hex[:12]
     thread_id = str(uuid.uuid4())
@@ -27,7 +26,13 @@ def main(site_id: str = "DE-MUC-01", stream: bool = False) -> None:
     hw_db = json.load(open(os.path.join(SETTINGS.data_dir, "hardware_specs.json"), "r", encoding="utf-8"))
     policies = load_policy_store(SETTINGS.policy_dir)
 
-    site = next(s for s in sites if s["site_id"] == site_id)
+    # Look up the requested site, fail gracefully if not found
+    site_index = {s["site_id"]: s for s in sites}
+    if site_id not in site_index:
+        valid_ids = sorted(site_index.keys())
+        print(f"Error: site_id '{site_id}' not found.\nValid site IDs: {valid_ids}")
+        sys.exit(1)
+    site = site_index[site_id]
 
     app = compile_graph()
 
@@ -44,20 +49,16 @@ def main(site_id: str = "DE-MUC-01", stream: bool = False) -> None:
 
     config = {"configurable": {"thread_id": thread_id}}
 
-    # Run graph
     if stream:
         final_state = None
         for event in app.stream(inputs, config=config):
-            # event is typically a dict of updates; printing helps you see progress
             if isinstance(event, dict):
                 print(json.dumps(event, ensure_ascii=True))
             else:
                 print(event)
-            # Keep updating final_state; last one will be the most complete
             if isinstance(event, dict):
                 final_state = event
-        # In some LangGraph versions, stream yields incremental updates rather than final state.
-        # So, safest is: if we didn't end up with a dict containing "adr", fall back to invoke once.
+
         if not (isinstance(final_state, dict) and ("adr" in final_state or "trace" in final_state)):
             out = app.invoke(inputs, config=config)
         else:
@@ -84,7 +85,5 @@ def main(site_id: str = "DE-MUC-01", stream: bool = False) -> None:
 
 
 if __name__ == "__main__":
-    # Usage: python -m aiv_de.run_one [SITE_ID] [--stream]
     site_id, stream = parse_args(sys.argv[1:])
     main(site_id=site_id, stream=stream)
-

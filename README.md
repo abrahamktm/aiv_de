@@ -1,13 +1,18 @@
-﻿cd aiv-de
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-pip install -r requirements.txt
-copy .env.example .env
+# AIV-DE -- AI Vision Decision Engine
 
+A multi-agent system that generates auditable **Architecture Decision Records (ADRs)**
+for AI-powered industrial vision deployments at factory sites.
 
-python -m src.aiv_de.run_one
-python -m src.aiv_de.run_one POISON-12
-python -m src.aiv_de.run_one IMPOSSIBLE-11
+Built with **LangGraph** (state machine orchestration), **Pydantic** (strict structured output),
+and a deterministic governance layer (policy-as-code + physics validation).
+
+---
+
+## What it does in one run
+
+**Input:** A factory site profile (power budget, latency, cameras, WAN, drift tolerance).
+
+**Output:** An `ADR-001` markdown document + a `trace.json` audit log explaining how and why it decided.
 
 ---
 
@@ -27,244 +32,104 @@ flowchart TD
   H --> I[ADR + trace]
 ```
 
-## Demo Script
+---
 
-```powershell
-# Happy path (ADR generated)
-python -m src.aiv_de.run_one DE-MUC-01
+## Folder structure
 
-# Policy veto + HITL escalation (prompt injection)
-python -m src.aiv_de.run_one POISON-12
-
-# Feasibility veto + HITL escalation (impossible constraints)
-python -m src.aiv_de.run_one IMPOSSIBLE-11
+```
+aiv_de/
+  data/               Ground-truth inputs (sites.json, hardware_specs.json)
+  policy_store/       Governance-as-code (YAML policies)
+  src/aiv_de/
+    agents/           LLM-powered roles (requirements, architect, validator, ADR writer)
+    tools/            Deterministic validators (feasibility, policy, hardware lookup)
+    observability/    LLM logging with redaction + hashing
+    graph.py          LangGraph orchestrator (state machine + SQLite checkpointing)
+    run_one.py        CLI entry point
+    config.py         Settings from .env
+    types.py          Shared state schema (TypedDict)
+  tests/              pytest test suite
 ```
 
-Expected outputs:
-- `out/DE-MUC-01_ADR-001.md` and `out/DE-MUC-01_trace.json`
-- `out/POISON-12_ADR-001.md` and `out/POISON-12_trace.json`
-- `out/IMPOSSIBLE-11_ADR-001.md` and `out/IMPOSSIBLE-11_trace.json`
+---
 
+## Setup
 
-Cool â€” you basically just created a *mini â€œenterprise architecture decision factoryâ€*.
-
-Hereâ€™s whatâ€™s going on, file-by-file, and how the whole thing behaves when you run it.
+```powershell
+cd aiv-de
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env       # add your OpenAI API key
+```
 
 ---
 
-## The big picture: what AIV-DE does in one run
+## Demo
 
-Input: **one factory site profile** (constraints + realities)
-Output: **ADR-001** (auditable architecture decision) + **trace log** (why/how it decided)
+```powershell
+$env:PYTHONPATH='src'
 
-Under the hood:
+# Happy path -- ADR generated, no vetoes
+python -m aiv_de.run_one DE-MUC-01
 
-1. Requirements Analyst extracts constraints/assumptions
-2. Architect proposes architectures
-3. Validator + Governance runs **deterministic tools** and can **veto**
-4. If veto â†’ revise and try again (limited retries)
-5. If still bad â†’ **HITL escalation**
-6. If OK â†’ ADR writer produces the final ADR
+# Policy veto + HITL escalation (prompt injection in site docs)
+python -m aiv_de.run_one POISON-12
 
----
+# Feasibility veto + HITL escalation (impossible constraints)
+python -m aiv_de.run_one IMPOSSIBLE-11
+```
 
-## Folder roles (why this structure looks â€œenterpriseâ€)
-
-### `data/` â€” â€œGround truth inputsâ€ (public-safe)
-
-This is your *scenario simulation world*.
-
-* **`sites.json`**: synthetic factories with different constraints (power, latency, WAN, drift).
-
-  * Includes **IMPOSSIBLE** to prove refusal/escalation
-  * Includes **POISON** to prove injection resistance
-* **`hardware_specs.json`**: curated hardware capability DB, **coarse** by design (safe + defensible).
-
-  * Your tools reference this instead of LLM guessing hardware.
-
-**Why interviewers like this:** you separated â€œfactsâ€ from â€œLLM text.â€
+Outputs go to `out/`:
+- `out/<site_id>_ADR-001.md`
+- `out/<site_id>_trace.json`
 
 ---
 
-### `policy_store/` â€” â€œGovernance as codeâ€
+## Tests
 
-These YAML files are your **enterprise policy layer**.
-Theyâ€™re what turn this from â€œagent demoâ€ into â€œdecision engine.â€
-
-* **`eu_ai_act_policy.yaml`**
-
-  * Encodes a conservative risk stance: safety lines â†’ â€œhigh-riskâ€ behavior
-  * Forces governance expectations (oversight, logging, escalation)
-* **`data_residency_policy.yaml`**
-
-  * Enforces â€œno raw images to cloudâ€ style constraints
-* **`hitl_policy.yaml`**
-
-  * Defines when to escalate to humans (validator exhausted, impossible, policy violation, high drift)
-* **`security_policy.yaml`**
-
-  * Defines prompt injection patterns and what to do when detected
-* **`scoring_weights.yaml`**
-
-  * Later (Day-5) used by the evaluator to compute a final score
-
-**Why interviewers like this:** policies are explicit, reviewable, testable, version-controlled.
+```powershell
+$env:PYTHONPATH='src'
+python -m pytest tests/ -v
+```
 
 ---
 
-### `src/aiv_de/` â€” the â€œproduct codeâ€
+## How it works
 
-This is the engine.
-
-#### Core plumbing
-
-* **`config.py`**
-
-  * Reads `.env` (paths, model name, retry count)
-  * Keeps your code portable across Windows/Mac/Linux
-* **`types.py`**
-
-  * Defines the â€œcontractâ€ between agents (state schema)
-  * Prevents â€œrandom dict soupâ€ as your project grows
-
-#### `tools/` â€” deterministic, auditable, â€œno hallucinationâ€ layer
-
-These are the *non-LLM* parts that make decisions defensible.
-
-* **`lookup_hardware.py`**
-
-  * Takes `hardware` IDs from the architecture proposal and resolves them into known hardware records.
-* **`validate_feasibility.py`**
-
-  * Quick â€œengineering sanity checkâ€:
-
-    * power budget vs edge box class
-    * safety latency vs cloud dependency
-    * multi-cam/high-fps/high-res vs low power â†’ likely impossible
-  * Outputs: is_possible + margin + bottlenecks + suggested_pipeline
-* **`policy_check.py`**
-
-  * Enforces policy store:
-
-    * data residency rules
-    * prompt injection detection (POISON site)
-  * Outputs: passed/failed + violated rules + required controls + HITL action
-
-**Key idea:** LLM proposes, tools dispose.
-The LLM is not allowed to be â€œthe final authority.â€
+1. **Requirements Analyst** extracts constraints and assumptions from the site profile
+2. **Architect** proposes 2-3 architecture options with strict Pydantic schema enforcement
+   (includes a repair loop if the LLM output fails validation)
+3. **Select** picks the top option (with hardware fallback if missing)
+4. **Validator + Governance** runs deterministic checks:
+   - Feasibility: power budget, latency vs cloud, multi-cam pressure
+   - Policy: data residency, prompt injection detection
+5. **Routing:**
+   - No vetoes --> ADR writer produces the final document
+   - Vetoes + retries left --> architect retries with veto feedback
+   - Vetoes + retries exhausted --> HITL escalation
+6. Every node logs `duration_s` and veto feedback into the trace for auditability
 
 ---
 
-#### `agents/` â€” LLM â€œrolesâ€ that generate structured outputs
+## Design principles
 
-These are the â€œbrains,â€ but theyâ€™re constrained to play specific roles.
-
-* **`requirements_analyst.py`**
-
-  * Reads a site profile and extracts constraints/missing info/assumptions
-  * Think: â€œsystems engineer reading a specâ€
-* **`architect.py`**
-
-  * Proposes 2â€“3 architecture options (edge/on-prem/hybrid), pipeline steps, and hardware IDs
-  * Think: â€œprincipal architect proposing alternativesâ€
-* **`validator_governance.py`**
-
-  * Doesnâ€™t call the LLM â€” it calls tools.
-  * Has veto authority
-  * Think: â€œsafety/compliance reviewer + performance reviewerâ€
-* **`adr_writer.py`**
-
-  * Writes the final ADR in a standard structure
+- **LLM proposes, tools dispose.** The LLM generates proposals; deterministic tools
+  enforce physics constraints and governance policies.
+- **Policy-as-code.** EU AI Act risk tiers, data residency, HITL triggers, and
+  prompt injection patterns are defined in versioned YAML files.
+- **Structured output.** The architect uses Pydantic models with `extra="forbid"` and
+  a repair loop to ensure reliable JSON from the LLM.
+- **Auditable traces.** Every run produces a JSON trace with per-node timing,
+  veto reasons, and retry feedback.
 
 ---
 
-### `graph.py` â€” the *orchestrator* (LangGraph)
+## Adversarial test cases
 
-This is the most important â€œagenticâ€ part.
+| Site ID | Purpose |
+|---------|---------|
+| `POISON-12` | Contains prompt injection in `poison_doc` field. Policy checker detects it, vetoes, escalates to HITL. |
+| `IMPOSSIBLE-11` | Contradictory constraints (20ms latency, 8W power, 16 cameras @ 60fps). Feasibility checker vetoes, exhausts retries, escalates. |
 
-It wires nodes into a state machine:
-
-* `requirements` â†’ `architect` â†’ `select` â†’ `validate`
-* After `validate`, it chooses a route:
-
-  * If no vetoes â†’ `adr`
-  * If vetoes and retries left â†’ `revise` â†’ back to `architect`
-  * If vetoes and retries exhausted â†’ `hitl`
-
-Also:
-
-* It uses **SQLite checkpointer** so state can be persisted by thread_id
-
-  * Thatâ€™s your â€œepisodic memory foundationâ€ (Day-1 baseline)
-
-Think of it like: *agent workflow = a compiled decision graph*, not a script.
-
----
-
-### `run_one.py` â€” the CLI entry point
-
-This is the â€œproduct interfaceâ€ for now:
-
-* loads `sites.json`, `hardware_specs.json`, and `policy_store/`
-* runs one site through the graph
-* writes:
-
-  * `out/<site>_ADR-001.md`
-  * `out/<site>_trace.json`
-
-This is what you demo in interviews.
-
----
-
-## What happens when you run the POISON and IMPOSSIBLE cases?
-
-### `POISON-12`
-
-* Site includes `poison_doc.example_text` with â€œIGNORE ALL PREVIOUSâ€¦â€
-* `policy_check.py` detects injection patterns (from `security_policy.yaml`)
-* Validator returns a veto â†’ either:
-
-  * revise (if retries left), or
-  * HITL escalation if retry budget is exhausted
-
-**This proves:** injection-aware architecture decisions, not doc-following.
-
-### `IMPOSSIBLE-11`
-
-* Constraints are intentionally contradictory: ultra-low latency + ultra-low power + many cameras + high fps
-* `validate_feasibility.py` flags infeasible (bottlenecks)
-* After retries â†’ HITL escalation ADR
-
-**This proves:** refusal and safe escalation.
-
----
-
-## Why the current skeleton feels â€œroughâ€ (and thatâ€™s intentional)
-
-Right now the `architect.py` returns **raw JSON text**, and `graph.py` stores it as a placeholder option (`RAW_OPTIONS`) until you implement parsing + validation.
-
-Thatâ€™s not a bug â€” itâ€™s the intended Day-2/Day-3 build step:
-
-* Add Pydantic schema parsing
-* If architect output invalid â†’ validator rejects â†’ architect retries
-* That becomes your â€œself-correction loopâ€ with real structure
-
----
-
-## One mental model (how to explain to an interviewer)
-
-> â€œI treat the LLM as a proposal generator.
-> Deterministic validators enforce physics (power/latency) and governance (residency/security).
-> A LangGraph state machine controls retries and HITL escalation.
-> Every run produces an ADR plus a full trace of tools/vetoes for auditability.â€
-
-Thatâ€™s the whole story.
-
----
-
-If you want the next step without any extra discussion: I can give you **Day-2 upgrade** that makes this â€œrealâ€:
-
-* strict Pydantic models for `ArchitectureOption`
-* parse/validate Architect JSON
-* if invalid JSON or missing fields â†’ automatic retry with feedback
-* generate a Mermaid graph from the `trace.json` automatically
+These exist to demonstrate that the system fails safely and escalates correctly.

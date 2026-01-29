@@ -1,58 +1,30 @@
-src/aiv_de/ — the “product code”
+# src/aiv_de/ -- Product code
 
-This is the engine.
+## Core plumbing
 
-Core plumbing
+- **config.py** -- Reads `.env` (paths, model name, retry count). Keeps the code portable.
+- **types.py** -- Defines the state schema (TypedDict contract between agents).
 
-config.py
+## graph.py -- The orchestrator (LangGraph)
 
-Reads .env (paths, model name, retry count)
+Wires nodes into a state machine:
 
-Keeps your code portable across Windows/Mac/Linux
+```
+requirements --> architect --> select --> validate
+                                           |
+                    +----------------------+---------------------+
+                    v                      v                     v
+                 adr_writer           revise-->architect      hitl escalation
+                (no vetoes)        (vetoes + retries left)  (retries exhausted)
+```
 
-types.py
+- Uses SQLite checkpointer for state persistence by `thread_id`
+- Each node logs `duration_s` into the trace
+- Revise node logs veto feedback so the architect can self-correct
 
-Defines the “contract” between agents (state schema)
+## run_one.py -- CLI entry point
 
-Prevents “random dict soup” as your project grows
-
-
-graph.py — the orchestrator (LangGraph)
-
-This is the most important “agentic” part.
-
-It wires nodes into a state machine:
-
-requirements → architect → select → validate
-
-After validate, it chooses a route:
-
-If no vetoes → adr
-
-If vetoes and retries left → revise → back to architect
-
-If vetoes and retries exhausted → hitl
-
-Also:
-
-It uses SQLite checkpointer so state can be persisted by thread_id
-
-That’s your “episodic memory foundation” (Day-1 baseline)
-
-Think of it like: agent workflow = a compiled decision graph, not a script.
-
-run_one.py — the CLI entry point
-
-This is the “product interface” for now:
-
-loads sites.json, hardware_specs.json, and policy_store/
-
-runs one site through the graph
-
-writes:
-
-out/<site>_ADR-001.md
-
-out/<site>_trace.json
-
-This is what you demo in interviews.
+- Loads sites, hardware DB, and policy store
+- Runs one site through the graph
+- Writes `out/<site_id>_ADR-001.md` and `out/<site_id>_trace.json`
+- Graceful error if site_id not found (prints valid IDs)

@@ -1,11 +1,12 @@
-from __future__ import annotations
 from typing import Any, Dict, List, Literal, Optional, TypedDict
 
 UseCase = Literal["safety_line", "quality_inspection"]
 
+
 class Veto(TypedDict):
     reason: str
     violated_rules: List[str]
+
 
 class FeasibilityResult(TypedDict):
     is_possible: bool
@@ -13,22 +14,25 @@ class FeasibilityResult(TypedDict):
     bottlenecks: List[str]
     suggested_pipeline: List[str]
 
+
 class PolicyResult(TypedDict):
     passed: bool
     violated_rules: List[str]
     required_controls: List[str]
     hitl_action: Optional[str]
 
+
 class ArchitectureOption(TypedDict):
     option_id: str
     summary: str
-    placement: Dict[str, str]  # component -> edge/onprem/hybrid
+    placement: Dict[str, str]   # component -> edge/onprem/hybrid
     pipeline: List[str]
-    hardware: List[str]        # hw_ids
+    hardware: List[str]         # hw_ids
     pros: List[str]
     cons: List[str]
     risks: List[str]
     mitigations: List[str]
+
 
 class ADR(TypedDict):
     adr_id: str
@@ -43,6 +47,7 @@ class ADR(TypedDict):
     evidence: str
     rollout_plan: str
     consequences: str
+
 
 class AIVDEState(TypedDict, total=False):
     # inputs

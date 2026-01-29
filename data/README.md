@@ -1,15 +1,9 @@
-data/ — “Ground truth inputs” (public-safe)
+# data/ -- Ground-truth inputs
 
-This is your scenario simulation world.
+Synthetic but realistic test data. Facts are separated from LLM text.
 
-sites.json: synthetic factories with different constraints (power, latency, WAN, drift).
+- **sites.json** -- 12 factory site profiles across Europe with constraints (power, latency, WAN, cameras, drift tolerance). Includes two adversarial cases:
+  - `IMPOSSIBLE-11` -- contradictory constraints to prove safe refusal/escalation
+  - `POISON-12` -- prompt injection payload to prove injection resistance
 
-Includes IMPOSSIBLE to prove refusal/escalation
-
-Includes POISON to prove injection resistance
-
-hardware_specs.json: curated hardware capability DB, coarse by design (safe + defensible).
-
-Your tools reference this instead of LLM guessing hardware.
-
-separated “facts” from “LLM text.”
+- **hardware_specs.json** -- Curated hardware capability DB (7 profiles: edge CPU/GPU, on-prem CPU/GPU). Power ratings are intentionally coarse ranges to avoid false precision.
